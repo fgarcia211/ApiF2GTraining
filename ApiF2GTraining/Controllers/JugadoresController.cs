@@ -18,8 +18,24 @@ namespace ApiF2GTraining.Controllers
             this.repo = repo;
         }
 
+        // POST: api/Jugadores
+        /// <summary>
+        /// Inserta un jugador introducido por el usuario en la BBDD
+        /// </summary>
+        /// <remarks>
+        /// Inserta jugador en la BBDD:
+        /// 
+        /// - El ID de equipo debe pertenecer al usuario
+        /// </remarks>
+        /// <param name="j">Jugador a introducir</param>
+        /// <response code="200">OK. Inserta el jugador en la BBDD</response>
+        /// <response code="400">ERROR: Ha ocurrido algun error de introduccion</response>  
+        /// <response code="401">Credenciales incorrectas</response>
         [Authorize]
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> InsertJugador(Jugador j)
         {
             Usuario user = HelperContextUser.GetUsuarioByClaim(HttpContext.User.Claims.SingleOrDefault(x => x.Type == "UserData"));
@@ -31,6 +47,7 @@ namespace ApiF2GTraining.Controllers
             }
             else if (user.IdUsuario == equipo.IdUsuario)
             {
+                //Hay que comprobar el ID posicion, que existe
                 await this.repo.InsertJugador(j.IdEquipo, j.IdPosicion, j.Nombre, j.Dorsal, j.Edad, j.Peso, j.Altura);
                 return Ok();
             }
@@ -41,16 +58,41 @@ namespace ApiF2GTraining.Controllers
             
         }
 
+        // GET: api/Jugadores/GetPosiciones
+        /// <summary>
+        /// Devuelve todas las posiciones de los jugadores disponibles
+        /// </summary>
+        /// <remarks>
+        /// Devuelve las posiciones
+        /// </remarks>
+        /// <response code="200">OK. Devuelve las posiciones introducidas</response>
         [HttpGet]
         [Route("[action]")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<List<Posicion>>> GetPosiciones()
         {
             return await this.repo.GetPosiciones();
         }
 
+        // GET: api/Jugadores/GetJugadorID/{idjugador}
+        /// <summary>
+        /// Devuelve el jugador con el ID correspondiente en la BB.DD
+        /// </summary>
+        /// <remarks>
+        /// Devuelve jugador por ID en la BB.DD
+        /// 
+        /// - El ID de usuario, del equipo del jugador, debe pertenecer al usuario
+        /// </remarks>
+        /// <param name="idjugador">ID de jugador a introducir</param>
+        /// <response code="200">OK. Devuelve el jugador de la BB.DD</response>
+        /// <response code="404">ERROR: No se ha encontrado el jugador con ese ID</response>  
+        /// <response code="401">Credenciales incorrectas</response>
         [Authorize]
         [HttpGet]
         [Route("[action]/{idjugador}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<Jugador>> GetJugadorID(int idjugador)
         {
             Jugador jugador = await this.repo.GetJugadorID(idjugador);
@@ -71,9 +113,25 @@ namespace ApiF2GTraining.Controllers
             }
         }
 
+        // GET: api/Jugadores/GetEstadisticasJugador/{idjugador}
+        /// <summary>
+        /// Devuelve las estadisticas del jugador con el ID correspondiente en la BB.DD
+        /// </summary>
+        /// <remarks>
+        /// Devuelve estadisticas por ID Jugador en la BB.DD
+        /// 
+        /// - El ID de usuario, del equipo del jugador, debe pertenecer al usuario
+        /// </remarks>
+        /// <param name="idjugador">ID de jugador a introducir</param>
+        /// <response code="200">OK. Devuelve las estadisticas de la BB.DD</response>
+        /// <response code="404">ERROR: No se ha encontrado el jugador con ese ID</response>  
+        /// <response code="401">Credenciales incorrectas</response>
         [Authorize]
         [HttpGet]
         [Route("[action]/{idjugador}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<EstadisticaJugador>> GetEstadisticasJugador(int idjugador)
         {
             Jugador jugador = await this.repo.GetJugadorID(idjugador);
@@ -94,9 +152,25 @@ namespace ApiF2GTraining.Controllers
             }
         }
 
+        // GET: api/Jugadores/GetJugadoresEquipo/{idequipo}
+        /// <summary>
+        /// Devuelve los jugadores pertenecientes al ID de equipo introducido en la BB.DD
+        /// </summary>
+        /// <remarks>
+        /// Devuelve jugadores por ID Equipo en la BB:DD
+        /// 
+        /// - El ID de usuario del equipo, debe pertenecer al usuario
+        /// </remarks>
+        /// <param name="idequipo">ID de equipo a introducir</param>
+        /// <response code="200">OK. Devuelve los jugadores de la BB.DD</response>
+        /// <response code="404">ERROR: No se ha encontrado el equipo con ese ID</response>  
+        /// <response code="401">Credenciales incorrectas</response>
         [Authorize]
         [HttpGet]
         [Route("[action]/{idequipo}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<List<Jugador>>> GetJugadoresEquipo(int idequipo)
         {
             Usuario user = HelperContextUser.GetUsuarioByClaim(HttpContext.User.Claims.SingleOrDefault(x => x.Type == "UserData"));
@@ -117,9 +191,25 @@ namespace ApiF2GTraining.Controllers
 
         }
 
+        // DELETE: api/Jugadores/DeleteJugador/{idjugador}
+        /// <summary>
+        /// Borra el jugador con el ID Correspondiente en la BB.DD
+        /// </summary>
+        /// <remarks>
+        /// Borra el jugador con ese ID
+        /// 
+        /// - El ID de usuario ,del equipo del jugador, debe pertenecer al usuario
+        /// </remarks>
+        /// <param name="idjugador">ID de jugador a introducir</param>
+        /// <response code="200">OK. Borra el jugador de la BB.DD</response>
+        /// <response code="404">ERROR: No se ha encontrado el equipo con ese ID</response>  
+        /// <response code="401">Credenciales incorrectas</response>
         [Authorize]
         [HttpDelete]
         [Route("[action]/{idjugador}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> DeleteJugador(int idjugador)
         {
             Jugador jugador = await this.repo.GetJugadorID(idjugador);
@@ -217,7 +307,10 @@ namespace ApiF2GTraining.Controllers
                 //HAY QUE COMPROBAR QUE TODOS LOS IDSJUGADOR SEAN DISTINTOS
                 if (HelperF2GTraining.HayRepetidos(idsjugador))
                 {
-                    return BadRequest();
+                    return BadRequest(new
+                    {
+                        response = "Error: Hay IDS de jugador repetidos"
+                    });
                 }
                 else
                 {
@@ -235,7 +328,10 @@ namespace ApiF2GTraining.Controllers
                     }
                     else
                     {
-                        return BadRequest();
+                        return BadRequest(new
+                        {
+                            response = "Error: Un jugador introducido no pertenece al equipo del entrenamiento"
+                        });
                     }
                     
                 }
@@ -258,9 +354,30 @@ namespace ApiF2GTraining.Controllers
 
             //Comprobamos que el entrenamiento exista, que este activo, y que el usuario haya pasado al menos 1 idjugador y 1 valoracion
             //Tambien comprobamos que no haya repetidos
-            if (entrena == null || idsjugador.Count() == 0 || valoraciones.Count() == 0 || entrena.Activo != true || HelperF2GTraining.HayRepetidos(idsjugador))
+            if (entrena == null)
             {
-                return BadRequest();
+                return NotFound();
+            }
+            else if (idsjugador.Count() == 0 || valoraciones.Count() == 0)
+            {
+                return BadRequest(new
+                {
+                    response = "Error: Debes introducir ids de jugadores y valoraciones"
+                });
+            }
+            else if (entrena.Activo != true)
+            {
+                return BadRequest(new
+                {
+                    response = "Error: El entrenamiento no esta activo"
+                });
+            }
+            else if (HelperF2GTraining.HayRepetidos(idsjugador))
+            {
+                return BadRequest(new
+                {
+                    response = "Error: Hay IDS de jugador repetidos"
+                });
             }
             else if (user.IdUsuario == equipo.IdUsuario)
             {
@@ -273,7 +390,10 @@ namespace ApiF2GTraining.Controllers
                     double comprobante = double.Parse(valoraciones.Count().ToString()) / double.Parse(idsjugador.Count().ToString());
                     if (comprobante != 6)
                     {
-                        return BadRequest();
+                        return BadRequest(new
+                        {
+                            response = "Error: Debes introducir 6 valoraciones entre 0 y 10 por cada ID jugador"
+                        });
                     }
                     else
                     {
@@ -281,7 +401,10 @@ namespace ApiF2GTraining.Controllers
                         {
                             if (val > 10 || val < 0)
                             {
-                                return BadRequest();
+                                return BadRequest(new
+                                {
+                                    response = "Error: Las valoraciones deben encontrarse entre 0 y 10"
+                                });
                             }
                         }
 
@@ -292,7 +415,10 @@ namespace ApiF2GTraining.Controllers
                 }
                 else
                 {
-                    return BadRequest();
+                    return BadRequest(new
+                    {
+                        response = "Error: No se han introducido los IDs de jugador pertenecientes a ese entrenamiento"
+                    });
                 }
                 
             }
