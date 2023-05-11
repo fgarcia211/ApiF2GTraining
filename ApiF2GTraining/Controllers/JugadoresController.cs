@@ -214,10 +214,32 @@ namespace ApiF2GTraining.Controllers
             }
             else if (user.IdUsuario == equipo.IdUsuario)
             {
-                await this.repo.AniadirJugadoresSesion(idsjugador, identrenamiento);
                 //HAY QUE COMPROBAR QUE TODOS LOS IDSJUGADOR SEAN DISTINTOS
-                await this.repo.EmpezarEntrenamiento(identrenamiento);
-                return Ok();
+                if (HelperF2GTraining.HayRepetidos(idsjugador))
+                {
+                    return BadRequest();
+                }
+                else
+                {
+                    List<Jugador> jugadoresseleccionados = new List<Jugador>();
+                    foreach (int idjug in idsjugador)
+                    {
+                        jugadoresseleccionados.Add(await this.repo.GetJugadorID(idjug));
+                    }
+
+                    if (HelperF2GTraining.JugadoresEquipoCorrecto(jugadoresseleccionados, equipo.IdEquipo))
+                    {
+                        await this.repo.AniadirJugadoresSesion(idsjugador, identrenamiento);
+                        await this.repo.EmpezarEntrenamiento(identrenamiento);
+                        return Ok();
+                    }
+                    else
+                    {
+                        return BadRequest();
+                    }
+                    
+                }
+                
             }
             else
             {
@@ -228,29 +250,49 @@ namespace ApiF2GTraining.Controllers
         [Authorize]
         [HttpPost]
         [Route("[action]/{identrenamiento}")]
-        //RECUERDA QUE POR CADA IDJUGADOR, DEBE HABER 6 VALORACIONES EN ORDEN
         public async Task<ActionResult> AniadirPuntuacionesEntrenamiento([FromQuery] List<int> idsjugador, [FromQuery] List<int> valoraciones, int identrenamiento)
         {
             Entrenamiento entrena = await this.repo.GetEntrenamiento(identrenamiento);
             Usuario user = HelperContextUser.GetUsuarioByClaim(HttpContext.User.Claims.SingleOrDefault(x => x.Type == "UserData"));
             Equipo equipo = await this.repo.GetEquipo(entrena.IdEquipo);
 
-            if (entrena == null || idsjugador.Count() == 0 || valoraciones.Count() == 0 || entrena.Activo != true)
+            //Comprobamos que el entrenamiento exista, que este activo, y que el usuario haya pasado al menos 1 idjugador y 1 valoracion
+            //Tambien comprobamos que no haya repetidos
+            if (entrena == null || idsjugador.Count() == 0 || valoraciones.Count() == 0 || entrena.Activo != true || HelperF2GTraining.HayRepetidos(idsjugador))
             {
                 return BadRequest();
             }
             else if (user.IdUsuario == equipo.IdUsuario)
             {
-                double comprobante = double.Parse(valoraciones.Count().ToString()) / double.Parse(idsjugador.Count().ToString());
-                if (comprobante != 6)
+                //Recogemos los jugadores que estaban apuntados a la sesion
+                List<Jugador> jugadoresentrena = await this.repo.JugadoresXSesion(identrenamiento);
+
+                //Comprobamos que los ID sean iguales a los que estan registrados en el entrenamiento
+                if (HelperF2GTraining.ComprobarIDJugadoresEntrena(idsjugador, jugadoresentrena))
                 {
-                    return BadRequest();
+                    double comprobante = double.Parse(valoraciones.Count().ToString()) / double.Parse(idsjugador.Count().ToString());
+                    if (comprobante != 6)
+                    {
+                        return BadRequest();
+                    }
+                    else
+                    {
+                        foreach (int val in valoraciones)
+                        {
+                            if (val > 10 || val < 0)
+                            {
+                                return BadRequest();
+                            }
+                        }
+
+                        await this.repo.AniadirPuntuacionesEntrenamiento(idsjugador, valoraciones, identrenamiento);
+                        await this.repo.FinalizarEntrenamiento(identrenamiento);
+                        return Ok();
+                    }
                 }
                 else
                 {
-                    await this.repo.AniadirPuntuacionesEntrenamiento(idsjugador, valoraciones, identrenamiento);
-                    await this.repo.FinalizarEntrenamiento(identrenamiento);
-                    return Ok();
+                    return BadRequest();
                 }
                 
             }
@@ -258,7 +300,7 @@ namespace ApiF2GTraining.Controllers
             {
                 return Unauthorized();
             }
-            
+
         }
 
     }
