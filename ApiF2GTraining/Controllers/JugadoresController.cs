@@ -1,6 +1,6 @@
 ﻿using ApiF2GTraining.Helpers;
 using ApiF2GTraining.Repositories;
-using F2GTraining.Models;
+using ModelsF2GTraining;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

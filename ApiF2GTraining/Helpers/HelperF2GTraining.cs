@@ -1,5 +1,5 @@
 ﻿using ApiF2GTraining.Repositories;
-using F2GTraining.Models;
+using ModelsF2GTraining;
 
 namespace ApiF2GTraining.Helpers
 {

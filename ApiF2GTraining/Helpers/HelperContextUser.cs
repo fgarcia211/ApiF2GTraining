@@ -1,4 +1,4 @@
-﻿using F2GTraining.Models;
+﻿using ModelsF2GTraining;
 using Newtonsoft.Json;
 using System.Security.Claims;
 

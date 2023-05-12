@@ -1,6 +1,6 @@
 ﻿using System.Data;
 using ApiF2GTraining.Data;
-using F2GTraining.Models;
+using ModelsF2GTraining;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
