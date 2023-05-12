@@ -1,4 +1,5 @@
 ﻿using ApiF2GTraining.Helpers;
+using ApiF2GTraining.Models;
 using ApiF2GTraining.Repositories;
 using F2GTraining.Models;
 using Microsoft.AspNetCore.Http;
@@ -29,35 +30,49 @@ namespace ApiF2GTraining.Controllers
         /// </summary>
         /// <remarks>
         /// Inserta usuarios en la BB.DD
+        /// 
+        /// - El telefono, el correo y el nombre de usuario deben ser únicos
         /// </remarks>
         /// <param name="user">JSON del usuario</param>
-        /// <response code="200">OK. Devuelve los entrenamientos del equipo solicitado</response>        
+        /// <response code="200">OK. Devuelve los entrenamientos del equipo solicitado</response>
+        /// <response code="400">ERROR: Solicitud mal introducida</response>  
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> InsertUsuario(Usuario user)
         {
-            await this.repo.InsertUsuario(user);
-            return Ok();
+            if (!(await this.repo.CheckUsuarioRegistro(user.Nombre)) && !(await this.repo.CheckTelefonoRegistro(user.Telefono)) && !(await this.repo.CheckCorreoRegistro(user.Correo)))
+            {
+                await this.repo.InsertUsuario(user);
+                return Ok();
+            }
+            else
+            {
+                return BadRequest(new
+                {
+                    response = "Error: El telefono, el correo o el nombre de usuario esta repetido dentro de la BBDD"
+                });
+            }
+            
         }
 
-        // POST: api/Usuarios/Login/{nombre}/{contrasenia}
+        // POST: api/Usuarios/Login
         /// <summary>
         /// Devuelve el token para hacer login con el nombre y la contrasenia introducida si coincide con la BB.DD
         /// </summary>
         /// <remarks>
         /// Devuelve token para peticiones
         /// </remarks>
-        /// <param name="nombre">Nombre del usuario</param>
-        /// <param name="contrasenia">Contraseña del usuario</param>
+        /// <param name="model">Nombre y contraseña del usuario</param>
         /// <response code="200">OK. Devuelve el token para realizar peticiones protegidas</response>        
         /// <response code="401">Credenciales incorrectas</response>
         [HttpPost]
-        [Route(("[action]/{nombre}/{contrasenia}"))]
+        [Route(("[action]"))]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<Usuario>> Login(string nombre, string contrasenia)
+        public async Task<ActionResult<Usuario>> Login(LoginModel model)
         {
-            Usuario user = await this.repo.GetUsuarioNamePass(nombre, contrasenia);
+            Usuario user = await this.repo.GetUsuarioNamePass(model.username, model.password);
             if (user != null)
             {
                 SigningCredentials credentials =

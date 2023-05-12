@@ -35,11 +35,12 @@ namespace ApiF2GTraining.Controllers
         [HttpPost("{nombre}/{imagen}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult> InsertEquipo(string nombre, IFormFile imagen)
+        public async Task<ActionResult> InsertEquipo(string nombre, string imagen)
         {
             Usuario user = HelperContextUser.GetUsuarioByClaim(HttpContext.User.Claims.SingleOrDefault(x => x.Type == "UserData"));
 
-            await this.repo.InsertEquipo(user.IdUsuario, nombre, imagen.FileName);
+            //Enlace del blob en la imagen
+            await this.repo.InsertEquipo(user.IdUsuario, nombre, imagen);
             return Ok();
         }
 

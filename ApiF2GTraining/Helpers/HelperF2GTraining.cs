@@ -63,5 +63,24 @@ namespace ApiF2GTraining.Helpers
 
             return true;
         }
+
+        public static bool PosicionCorrecta(List<Posicion> posiciones, int idposicion)
+        {
+            List<int> idsposiciones = new List<int>();
+
+            foreach (Posicion p in posiciones)
+            {
+                idsposiciones.Add(p.IdPosicion);
+            }
+
+            if (idsposiciones.Contains(idposicion))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 }
