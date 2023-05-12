@@ -128,15 +128,18 @@ namespace ApiF2GTraining.Controllers
             }
         }
 
-        // GET: api/Entrenamientos/GetEntrenamiento/{idequipo}
+        // DELETE: api/Entrenamientos/BorrarEntrenamiento/{idequipo}
         /// <summary>
         /// Borra el entrenamiento correspondiente a su ID de entrenamiento
         /// </summary>
         /// <remarks>
         /// Borra entrenamiento por su ID
+        /// 
+        /// - Para borrar un entrenamiento, no debe haber empezado
         /// </remarks>
         /// <param name="identrenamiento">Id del entrenamiento.</param>
-        /// <response code="200">OK. Borra el entrenamiento solicitado</response>        
+        /// <response code="200">OK. Borra el entrenamiento solicitado</response>
+        /// <response code="400">ERROR: Solicitud mal introducida</response>
         /// <response code="401">Debe entregar un token para realizar la solicitud</response>
         /// <response code="404">No se ha encontrado ningun entrenamiento con ese ID</response> 
         [Authorize]
@@ -155,8 +158,19 @@ namespace ApiF2GTraining.Controllers
 
                 if (equipo.IdUsuario == user.IdUsuario)
                 {
-                    await this.repo.BorrarEntrenamiento(identrenamiento);
-                    return Ok();
+                    if (entrena.FechaFin == null && entrena.FechaInicio == null)
+                    {
+                        await this.repo.BorrarEntrenamiento(identrenamiento);
+                        return Ok();
+                    }
+                    else
+                    {
+                        return BadRequest(new
+                        {
+                            response = "El entrenamiento ya ha empezado o ha sido finalizado"
+                        });
+                    }
+                    
                 }
                 else
                 {
