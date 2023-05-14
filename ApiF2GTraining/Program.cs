@@ -7,12 +7,22 @@ using NSwag.Generation.Processors.Security;
 using NSwag;
 using System.Reflection.Metadata;
 using Swashbuckle.AspNetCore.SwaggerUI;
+using Microsoft.Extensions.Azure;
+using Azure.Security.KeyVault.Secrets;
 
 var builder = WebApplication.CreateBuilder(args);
 
 //Conexion a BB.DD
-string connectionString =
-    builder.Configuration.GetConnectionString("SqlAzure");
+builder.Services.AddAzureClients(factory =>
+{
+    factory.AddSecretClient(builder.Configuration.GetSection("KeyVault"));
+});
+
+SecretClient secretClient = builder.Services.BuildServiceProvider().GetService<SecretClient>();
+KeyVaultSecret keyVaultSecret = await secretClient.GetSecretAsync("SqlAzureF2G");
+// Add services to the container.
+
+string connectionString = keyVaultSecret.Value;
 builder.Services.AddTransient<IRepositoryF2GTraining, RepositoryF2GTraining>();
 builder.Services.AddDbContext<F2GDataBaseContext>(options => options.UseSqlServer(connectionString));
 
@@ -24,20 +34,6 @@ builder.Services.AddAuthentication(helper.GetAuthenticationOptions()).AddJwtBear
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-/*builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "Api F2G Training App",
-        Description = "Api realizada para el funcionamiento de la aplicación F2G Training.",
-        Version = "v1",
-        Contact = new OpenApiContact()
-        {
-            Name = "Fernando García Garrido",
-            Email = "fernando.garciagarrido@tajamar365.com"
-        }
-    });
-});*/
 
 builder.Services.AddOpenApiDocument(document => {
 
@@ -58,7 +54,6 @@ builder.Services.AddOpenApiDocument(document => {
 var app = builder.Build();
 
 app.UseOpenApi();
-/*app.UseSwagger();*/
 app.UseSwaggerUI(options =>
 {
     options.InjectStylesheet("/css/bootstrap.css");
