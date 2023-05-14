@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ApiF2GTraining.Controllers
 {
@@ -105,6 +106,24 @@ namespace ApiF2GTraining.Controllers
                 return Unauthorized();
             }
             
+        }
+
+        // GET: api/Usuarios/GetUsuarioLogueado
+        /// <summary>
+        /// Devuelve el usuario que ha hecho login en la BB.DD
+        /// </summary>
+        /// <remarks>
+        /// Devuelve usuario logueado
+        /// </remarks>
+        /// <response code="200">OK. Devuelve el usuario logueado</response>  
+        /// <response code="401">Debe entregar un token para realizar la solicitud</response>
+        [Authorize]
+        [HttpGet]
+        [Route("[action]")]
+        public async Task<ActionResult<Usuario>> GetUsuarioLogueado()
+        {
+            Usuario user = HelperContextUser.GetUsuarioByClaim(HttpContext.User.Claims.SingleOrDefault(x => x.Type == "UserData"));
+            return user;
         }
 
         // GET: api/Usuarios/TelefonoRegistrado/{telefono}
