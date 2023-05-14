@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Security.Claims;
+using ApiF2GTraining.Models;
 
 namespace ApiF2GTraining.Controllers
 {
@@ -27,20 +28,18 @@ namespace ApiF2GTraining.Controllers
         /// <remarks>
         /// Inserta equipos por su iduser, su nombre y su imagen
         /// </remarks>
-        /// <param name="nombre">Nombre del equipo</param>
-        /// <param name="imagen">Imagen del equipo</param>
         /// <response code="200">OK. Inserta el equipo</response>        
         /// <response code="401">Acceso no autorizado</response>
         [Authorize]
-        [HttpPost("{nombre}/{imagen}")]
+        [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult> InsertEquipo(string nombre, string imagen)
+        public async Task<ActionResult> InsertEquipo(EquipoModel model)
         {
             Usuario user = HelperContextUser.GetUsuarioByClaim(HttpContext.User.Claims.SingleOrDefault(x => x.Type == "UserData"));
 
             //Enlace del blob en la imagen
-            await this.repo.InsertEquipo(user.IdUsuario, nombre, imagen);
+            await this.repo.InsertEquipo(user.IdUsuario, model.nombre, model.imagen);
             return Ok();
         }
 
