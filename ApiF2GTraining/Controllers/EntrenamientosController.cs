@@ -142,12 +142,13 @@ namespace ApiF2GTraining.Controllers
         /// 
         /// </remarks>
         /// <param name="idsjugador">ID de jugadores a incluir en el entrenamiento</param>
+        /// <param name="valoraciones">Puntuaciones de cada jugador (6 por cada ID de jugador)</param>
         /// <param name="identrenamiento">ID de entrenamiento a introducir</param>
         /// <response code="200">OK. Devuelve los jugadores y las notas pertenecientes a ese entrenamiento</response>
         /// <response code="400">ERROR: Solicitud mal introducida</response>
         /// <response code="401">Credenciales incorrectas</response>
         [Authorize]
-        [HttpPost]
+        [HttpPut]
         [Route("[action]/{identrenamiento}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
