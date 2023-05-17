@@ -176,35 +176,37 @@ namespace ApiF2GTraining.Repositories
 		}
 
         #region METODOSUSUARIO
-
+        public int InsertIdUser()
+        {
+            if (this.context.Usuarios.Count() > 0)
+            {
+                return this.context.Usuarios.Max(x => x.IdUsuario) + 1;
+            }
+            else
+            {
+                return 1;
+            }
+        }
         public async Task InsertUsuario(Usuario user)
         {
-            string sql = "SP_INSERT_USUARIO @NOMBRE, @CORREO, @CONTRASENIA, @TELEFONO";
+            user.IdUsuario = this.InsertIdUser();
+            user.Token = "SIN TOKEN";
 
-            SqlParameter pamNom = new SqlParameter("@NOMBRE", user.Nombre);
-            SqlParameter pamCor = new SqlParameter("@CORREO", user.Correo.ToLower());
-            SqlParameter pamCon = new SqlParameter("@CONTRASENIA", user.Contrasenia);
-            SqlParameter pamTel = new SqlParameter("@TELEFONO", user.Telefono);
-
-            await this.context.Database.ExecuteSqlRawAsync(sql, pamNom, pamCor, pamCon, pamTel);
+            this.context.Usuarios.Add(user);
+            await this.context.SaveChangesAsync();
 
         }
 
         public async Task<Usuario> GetUsuarioNamePass(string nombre, string contrasenia)
         {
-            string sql = "SP_FIND_USUARIO @NOMBRE, @CONTRASENIA";
-            SqlParameter pamNom = new SqlParameter("@NOMBRE", nombre);
-            SqlParameter pamCon = new SqlParameter("@CONTRASENIA", contrasenia);
-            var consulta = await this.context.Usuarios.FromSqlRaw(sql, pamNom, pamCon).ToListAsync();
+            var consulta = await this.context.Usuarios.Where(x => x.Nombre == nombre && x.Contrasenia == contrasenia).ToListAsync();
             Usuario user = consulta.FirstOrDefault();
             return user;
         }
 
         public async Task<bool> CheckTelefonoRegistro(int telefono)
         {
-            string sql = "SP_FIND_TELEFONO @TELEFONO";
-            SqlParameter pamTel = new SqlParameter("@TELEFONO", telefono);
-            var consulta = await this.context.Usuarios.FromSqlRaw(sql, pamTel).ToListAsync();
+            var consulta = await this.context.Usuarios.Where(x => x.Telefono == telefono).ToListAsync();
             Usuario user = consulta.FirstOrDefault();
 
             if (user == null)
@@ -220,9 +222,7 @@ namespace ApiF2GTraining.Repositories
 
         public async Task<bool> CheckUsuarioRegistro(string nombre)
         {
-            string sql = "SP_FIND_NOM_USUARIO @NOMBRE";
-            SqlParameter pamNom = new SqlParameter("@NOMBRE", nombre);
-            var consulta = await this.context.Usuarios.FromSqlRaw(sql, pamNom).ToListAsync();
+            var consulta = await this.context.Usuarios.Where(x => x.Nombre == nombre).ToListAsync();
             Usuario user = consulta.FirstOrDefault();
 
             if (user == null)
@@ -238,9 +238,7 @@ namespace ApiF2GTraining.Repositories
 
         public async Task<bool> CheckCorreoRegistro(string correo)
         {
-            string sql = "SP_FIND_CORREO @CORREO";
-            SqlParameter pamCor = new SqlParameter("@CORREO", correo.ToLower());
-            var consulta = await this.context.Usuarios.FromSqlRaw(sql, pamCor).ToListAsync();
+            var consulta = await this.context.Usuarios.Where(x => x.Correo == correo).ToListAsync();
             Usuario user = consulta.FirstOrDefault();
 
             if (user == null)
@@ -256,33 +254,42 @@ namespace ApiF2GTraining.Repositories
         #endregion
 
         #region METODOSEQUIPOS
+        public int InsertIdEquipo()
+        {
+            if (this.context.Equipos.Count() > 0)
+            {
+                return this.context.Equipos.Max(x => x.IdEquipo) + 1;
+            }
+            else
+            {
+                return 1;
+            }
+        }
 
         public async Task InsertEquipo(int iduser, string nombre, string imagen)
         {
-            string sql = "SP_INSERT_EQUIPO @IDUSER, @NOMBRE, @IMAGEN";
+            Equipo equipo = new Equipo
+            {
+                IdEquipo = this.InsertIdEquipo(),
+                IdUsuario = iduser,
+                Nombre = nombre,
+                Imagen = imagen
+            };
 
-            SqlParameter pamIdUs = new SqlParameter("@IDUSER", iduser);
-            SqlParameter pamNom = new SqlParameter("@NOMBRE", nombre);
-            SqlParameter pamIma = new SqlParameter("@IMAGEN", imagen);
-
-            await this.context.Database.ExecuteSqlRawAsync(sql, pamIdUs, pamNom, pamIma);
+            this.context.Equipos.Add(equipo);
+            await this.context.SaveChangesAsync();
 
         }
 
         public async Task<List<Equipo>> GetEquiposUser(int iduser)
         {
-            string sql = "SP_FIND_EQUIPOS_USER @IDUSER";
-            SqlParameter pamIdUs = new SqlParameter("@IDUSER", iduser);
-            var consulta = this.context.Equipos.FromSqlRaw(sql, pamIdUs);
-            List<Equipo> equiposusuario = await consulta.ToListAsync();
+            List<Equipo> equiposusuario = await this.context.Equipos.Where(x => x.IdUsuario == iduser).ToListAsync();
             return equiposusuario;
         }
 
         public async Task<Equipo> GetEquipo(int idequipo)
         {
-            string sql = "SP_FIND_EQUIPO_ID @IDEQUIPO";
-            SqlParameter pamIdUs = new SqlParameter("@IDEQUIPO", idequipo);
-            var consulta = await this.context.Equipos.FromSqlRaw(sql, pamIdUs).ToListAsync();
+            var consulta = await this.context.Equipos.Where(x => x.IdEquipo == idequipo).ToListAsync();
             Equipo equipo = consulta.AsEnumerable().FirstOrDefault();
             return equipo;
         }
@@ -291,39 +298,79 @@ namespace ApiF2GTraining.Repositories
 
         #region METODOSJUGADORES
 
+        public int InsertIdJugador()
+        {
+            if (this.context.Jugadores.Count() > 0)
+            {
+                return this.context.Jugadores.Max(x => x.IdJugador) + 1;
+            }
+            else
+            {
+                return 1;
+            }
+        }
+
+        public int InsertIdEstadisticas()
+        {
+            if (this.context.EstadisticasJugadores.Count() > 0)
+            {
+                return this.context.EstadisticasJugadores.Max(x => x.Id) + 1;
+            }
+            else
+            {
+                return 1;
+            }
+        }
+
         public async Task InsertJugador(int idequipo, int idposicion, string nombre, int dorsal, int edad, int peso, int altura)
         {
-            string sql = "SP_INSERT_JUGADOR @IDEQUIPO, @IDPOSICION, @NOMBRE, @DORSAL, @EDAD, @PESO, @ALTURA";
+            this.context.Jugadores.Add(new Jugador
+            {
+                IdJugador = this.InsertIdJugador(),
+                IdEquipo = idequipo,
+                IdPosicion = idposicion,
+                Nombre = nombre,
+                Dorsal = dorsal,
+                Edad = edad,
+                Peso = peso,
+                Altura = altura
+            });
+            await this.context.SaveChangesAsync();
 
-            SqlParameter pamIdEq = new SqlParameter("@IDEQUIPO", idequipo);
-            SqlParameter pamIdPos = new SqlParameter("@IDPOSICION", idposicion);
-            SqlParameter pamNom = new SqlParameter("@NOMBRE", nombre);
-            SqlParameter pamDor = new SqlParameter("@DORSAL", dorsal);
-            SqlParameter pamEda = new SqlParameter("@EDAD", edad);
-            SqlParameter pamPes = new SqlParameter("@PESO", peso);
-            SqlParameter pamAlt = new SqlParameter("@ALTURA", altura);
+            this.context.EstadisticasJugadores.Add(new EstadisticaJugador
+            {
+                Id = this.InsertIdEstadisticas(),
+                IdJugador = this.context.Jugadores.Max(x => x.IdJugador),
+                TotalDefensaGKVelocidad = null,
+                TotalFisicoGKPosicion = null,
+                TotalPaseGKSaque = null,
+                TotalRegateGKReflejo = null,
+                TotalRitmoGKSalto = null,
+                TotalTiroGKParada = null,
+                DefensaGKVelocidad = null,
+                FisicoGKPosicion = null,
+                PaseGKSaque = null,
+                RegateGKReflejo = null,
+                RitmoGKSalto = null,
+                TiroGKParada = null
+            });
 
-            await this.context.Database.ExecuteSqlRawAsync(sql, pamIdEq, pamIdPos, pamNom, pamDor, pamEda, pamPes, pamAlt);
+            await this.context.SaveChangesAsync();
 
         }
 
         public async Task<List<Posicion>> GetPosiciones()
         {
-            string sql = "SP_FIND_POSITIONS";
-            var consulta = this.context.Posiciones.FromSqlRaw(sql);
-            List<Posicion> posiciones = await consulta.ToListAsync();
+            List<Posicion> posiciones = await this.context.Posiciones.ToListAsync();
             return posiciones;
 
         }
 
         public async Task<Jugador> GetJugadorID(int id)
         {
-            string sql = "SP_FIND_JUGADOR_ID @IDJUGADOR";
-            SqlParameter pamIdJug = new SqlParameter("@IDJUGADOR", id);
-            var consulta = await this.context.Jugadores.FromSqlRaw(sql, pamIdJug).ToListAsync();
+            var consulta = await this.context.Jugadores.Where(x => x.IdJugador == id).ToListAsync();
             Jugador player = consulta.AsEnumerable().FirstOrDefault();
             return player;
-
         }
 
         public async Task<EstadisticaJugador> GetEstadisticasJugador(int id)
@@ -333,19 +380,28 @@ namespace ApiF2GTraining.Repositories
 
         public async Task<List<Jugador>> GetJugadoresEquipo(int idequipo)
         {
-            string sql = "SP_FIND_JUGADORES_IDEQUIPO @IDEQUIPO";
-            SqlParameter pamIdEq = new SqlParameter("@IDEQUIPO", idequipo);
-            var consulta = await this.context.Jugadores.FromSqlRaw(sql, pamIdEq).ToListAsync();
-            List<Jugador> players = consulta;
+            List<Jugador> players = await this.context.Jugadores.Where(x => x.IdEquipo == idequipo).ToListAsync();
             return players;
-
         }
 
         public async Task DeleteJugador(int idjugador)
         {
-            string sql = "SP_DELETE_JUGADOR_ID @IDJUGADOR";
-            SqlParameter pamIdJug = new SqlParameter("@IDJUGADOR", idjugador);
-            await this.context.Database.ExecuteSqlRawAsync(sql, pamIdJug);
+            List<JugadorEntrenamiento> jugentrena = await this.context.JugadoresEntrenamiento.Where(x => x.IdJugador == idjugador).ToListAsync();
+
+            foreach (JugadorEntrenamiento je in jugentrena)
+            {
+                this.context.JugadoresEntrenamiento.Remove(je);
+            }
+
+            await this.context.SaveChangesAsync();
+
+            EstadisticaJugador estadist = await this.context.EstadisticasJugadores.Where(x => x.IdJugador == idjugador).FirstOrDefaultAsync();
+            this.context.EstadisticasJugadores.Remove(estadist);
+            await this.context.SaveChangesAsync();
+
+            Jugador jug = await this.context.Jugadores.Where(x => x.IdJugador == idjugador).FirstOrDefaultAsync();
+            this.context.Jugadores.Remove(jug);
+            await this.context.SaveChangesAsync();
 
         }
 
@@ -557,64 +613,70 @@ namespace ApiF2GTraining.Repositories
         #endregion
 
         #region METODOSENTRENAMIENTOS
+        public int InsertIdEntrena()
+        {
+            if (this.context.Entrenamientos.Count() > 0)
+            {
+                return this.context.Entrenamientos.Max(x => x.Id) + 1;
+            }
+            else
+            {
+                return 1;
+            }
+        }
+
         public async Task InsertEntrenamiento(int idequipo, string nombre)
         {
-            string sql = "SP_INSERTAR_ENTRENAMIENTO @IDEQUIPO, @NOMBRE";
+            Entrenamiento entrenamiento = new Entrenamiento
+            {
+                Id = this.InsertIdEntrena(),
+                IdEquipo = idequipo,
+                FechaInicio = null,
+                FechaFin = null,
+                Activo = false,
+                Nombre = nombre
+            };
 
-            SqlParameter pamIdEq = new SqlParameter("@IDEQUIPO", idequipo);
-            SqlParameter pamNom = new SqlParameter("@NOMBRE", nombre);
-
-            await this.context.Database.ExecuteSqlRawAsync(sql, pamIdEq, pamNom);
+            this.context.Entrenamientos.Add(entrenamiento);
+            await this.context.SaveChangesAsync();
 
         }
 
         public async Task<List<Entrenamiento>> GetEntrenamientosEquipo(int idequipo)
         {
-            string sql = "SP_ENTRENAMIENTOS_EQUIPO @IDEQUIPO";
-            SqlParameter pamIdEq = new SqlParameter("@IDEQUIPO", idequipo);
-            var consulta = this.context.Entrenamientos.FromSqlRaw(sql, pamIdEq);
-            List<Entrenamiento> entrenamientos = await consulta.ToListAsync();
+            List<Entrenamiento> entrenamientos = await this.context.Entrenamientos.Where(x => x.IdEquipo == idequipo).ToListAsync();
             return entrenamientos;
         }
 
         public async Task<Entrenamiento> GetEntrenamiento(int identrena)
         {
-            string sql = "SP_BUSCAR_ENTRENAMIENTO @IDENTRENAMIENTO";
-            SqlParameter pamEnt = new SqlParameter("@IDENTRENAMIENTO", identrena);
-            var consulta = await this.context.Entrenamientos.FromSqlRaw(sql, pamEnt).ToListAsync();
+            var consulta = await this.context.Entrenamientos.Where(x => x.Id == identrena).ToListAsync();
             Entrenamiento entrenamiento = consulta.AsEnumerable().FirstOrDefault();
             return entrenamiento;
         }
 
         public async Task EmpezarEntrenamiento(int identrenamiento)
         {
-            string sql = "SP_EMPEZAR_ENTRENAMIENTO @IDENTRENAMIENTO, @FECHAINICIO";
-
-            SqlParameter pamIdEnt = new SqlParameter("@IDENTRENAMIENTO", identrenamiento);
-            SqlParameter pamFec = new SqlParameter("@FECHAINICIO", DateTimeOffset.Now);
-
-            await this.context.Database.ExecuteSqlRawAsync(sql, pamIdEnt, pamFec);
+            Entrenamiento entrena = await this.context.Entrenamientos.Where(x => x.Id == identrenamiento).FirstOrDefaultAsync();
+            entrena.FechaInicio = Convert.ToDateTime(DateTime.Now);
+            entrena.Activo = true;
+            await this.context.SaveChangesAsync();
 
         }
 
         public async Task FinalizarEntrenamiento(int identrenamiento)
         {
-            string sql = "SP_FINALIZAR_ENTRENAMIENTO @IDENTRENAMIENTO, @FECHAFIN";
-
-            SqlParameter pamIdEnt = new SqlParameter("@IDENTRENAMIENTO", identrenamiento);
-            SqlParameter pamFec = new SqlParameter("@FECHAFIN", DateTimeOffset.Now);
-
-            await this.context.Database.ExecuteSqlRawAsync(sql, pamIdEnt, pamFec);
-
+            Entrenamiento entrena = await this.context.Entrenamientos.Where(x => x.Id == identrenamiento).FirstOrDefaultAsync();
+            entrena.FechaFin = Convert.ToDateTime(DateTime.Now);
+            entrena.Activo = false;
+            await this.context.SaveChangesAsync();
         }
 
         public async Task BorrarEntrenamiento(int identrenamiento)
         {
-            string sql = "SP_BORRAR_ENTRENAMIENTO @IDENTRENAMIENTO";
-
-            SqlParameter pamIdEnt = new SqlParameter("@IDENTRENAMIENTO", identrenamiento);
-
-            await this.context.Database.ExecuteSqlRawAsync(sql, pamIdEnt);
+            Entrenamiento entrena = await this.context.Entrenamientos.Where(x => x.Id == identrenamiento).FirstOrDefaultAsync();
+            this.context.Entrenamientos.Remove(entrena);
+            await this.context.SaveChangesAsync();
 
         }
         #endregion
